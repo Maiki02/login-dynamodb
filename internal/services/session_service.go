@@ -8,11 +8,11 @@ import (
 
 	"myproject/internal/models"
 	"myproject/internal/repositories"
-	"myproject/pkg/consts"
 	tokens "myproject/pkg/jwt"
 	"myproject/pkg/request"
 	"myproject/pkg/validations"
 
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -50,14 +50,7 @@ func (s *sessionService) Register(ctx context.Context, req request.RegisterUserR
 		return ErrUserAlreadyExists
 	}
 
-	// 2. Crear una empresa básica para el usuario
-	company := models.CompanyUserInfo{
-		CompanyID: "default-company-id",
-		Name:      req.CompanyName,
-		Roles:     []string{consts.ROLE_OWNER},
-	}
-
-	// 3. Crear el usuario (simplificamos NewUser para que no requiera Company)
+	// 2. Crear el usuario
 	user := &models.User{
 		ID: "", // Se generará en NewUser
 		PersonalInfo: models.PersonalInfo{
@@ -69,9 +62,8 @@ func (s *sessionService) Register(ctx context.Context, req request.RegisterUserR
 				Address: strings.ToLower(req.Email),
 			},
 		},
-		CompaniesInfo: []models.CompanyUserInfo{company},
-		CreatedAt:     time.Now(),
-		Status:        1, // active
+		CreatedAt: time.Now(),
+		Status:    1, // active
 	}
 
 	// 4. Hash de la contraseña
@@ -185,19 +177,9 @@ func (s *sessionService) RefreshToken(ctx context.Context, token string) (*token
 	}, nil
 }
 
-// generateUserID genera un ID único para el usuario
+// generateUserID genera un ID único para el usuario usando UUID v4
 func generateUserID() string {
-	// Por simplicidad, usamos UUID v4
-	// En producción podrías usar un patrón más específico
-	return "user_" + time.Now().Format("20060102150405") + "_" + generateRandomString(6)
-}
-
-// generateRandomString genera una cadena aleatoria de la longitud especificada
-func generateRandomString(length int) string {
-	const charset = "abcdefghijklmnopqrstuvwxyz0123456789"
-	result := make([]byte, length)
-	for i := range result {
-		result[i] = charset[time.Now().UnixNano()%int64(len(charset))]
-	}
-	return string(result)
+	// UUID v4 garantiza distribución uniforme en DynamoDB
+	// y unicidad global sin dependencia del tiempo
+	return uuid.New().String()
 }

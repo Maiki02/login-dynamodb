@@ -2,11 +2,10 @@ package request
 
 // -------------- SESSION ----------------\\
 type RegisterUserRequest struct {
-	Name        string `json:"name" binding:"required"`
-	LastName    string `json:"last_name" binding:"required"`
-	Email       string `json:"email" binding:"required"`
-	Password    string `json:"password" binding:"required"`
-	CompanyName string `json:"company_name" binding:"required"`
+	Name     string `json:"name" binding:"required"`
+	LastName string `json:"last_name" binding:"required"`
+	Email    string `json:"email" binding:"required"`
+	Password string `json:"password" binding:"required"`
 }
 
 type LoginUserRequest struct {

@@ -1,7 +1,6 @@
 package models
 
 import (
-	"myproject/pkg/consts"
 	security "myproject/pkg/session"
 	"myproject/pkg/validations"
 	"strings"
@@ -12,7 +11,7 @@ import (
 
 // User representa la estructura de un usuario en la aplicación para DynamoDB.
 type User struct {
-	ID string `json:"id" dynamodbav:"id"`
+	ID string `json:"id" dynamodbav:"user_id"`
 	// Información personal del usuario
 	PersonalInfo PersonalInfo `json:"personal_info" dynamodbav:"personal_info"`
 	// Información de contacto del usuario
@@ -21,12 +20,11 @@ type User struct {
 	//Contraseña del usuario
 	Password string `json:"password" dynamodbav:"password"`
 
-	CompaniesInfo []CompanyUserInfo `json:"companies_info" dynamodbav:"companies_info"`
-	CreatedAt     time.Time         `json:"created_at" dynamodbav:"created_at"`
-	UpdatedAt     time.Time         `json:"updated_at,omitempty" dynamodbav:"updated_at,omitempty"`
-	DeletedAt     time.Time         `json:"deleted_at,omitempty" dynamodbav:"deleted_at,omitempty"`
-	Status        int32             `json:"status" dynamodbav:"status"` // Por ejemplo, 1: activo, 0: inactivo, -1: baneado
-	LastSession   time.Time         `json:"last_session,omitempty" dynamodbav:"last_session,omitempty"`
+	CreatedAt   time.Time `json:"created_at" dynamodbav:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at,omitempty" dynamodbav:"updated_at,omitempty"`
+	DeletedAt   time.Time `json:"deleted_at,omitempty" dynamodbav:"deleted_at,omitempty"`
+	Status      int32     `json:"status" dynamodbav:"status"` // Por ejemplo, 1: activo, 0: inactivo, -1: baneado
+	LastSession time.Time `json:"last_session,omitempty" dynamodbav:"last_session,omitempty"`
 }
 
 // PersonalInfo agrupa la información personal del usuario.
@@ -51,13 +49,6 @@ type EmailDetails struct {
 	SentAt          time.Time `json:"sent_at" dynamodbav:"sent_at"`
 }
 
-// CompanyInfo representa la información de una empresa asociada al usuario.
-type CompanyUserInfo struct {
-	CompanyID string   `json:"company_id" dynamodbav:"company_id"`
-	Name      string   `json:"name" dynamodbav:"name"`
-	Roles     []string `json:"roles" dynamodbav:"roles"` // Cambiado a slice de strings para múltiples roles
-}
-
 func NewUser(name, lastName, email, password string, companyName string) (*User, error) {
 	nameToSave, err := validations.ValidateName(name, "Nombre")
 	if err != nil {
@@ -80,13 +71,12 @@ func NewUser(name, lastName, email, password string, companyName string) (*User,
 	}
 
 	return &User{
-		ID:            uuid.New().String(),
-		PersonalInfo:  PersonalInfo{Name: nameToSave, LastName: lastNameToSave},
-		ContactInfo:   ContactInfo{Email: EmailDetails{Address: strings.ToLower(email)}},
-		Password:      *hashPassword,
-		CompaniesInfo: []CompanyUserInfo{{CompanyID: "default-company", Name: companyName, Roles: []string{consts.ROLE_OWNER}}},
-		CreatedAt:     time.Now(),
-		Status:        1, // active status
+		ID:           uuid.New().String(),
+		PersonalInfo: PersonalInfo{Name: nameToSave, LastName: lastNameToSave},
+		ContactInfo:  ContactInfo{Email: EmailDetails{Address: strings.ToLower(email)}},
+		Password:     *hashPassword,
+		CreatedAt:    time.Now(),
+		Status:       1, // active status
 	}, nil
 }
 

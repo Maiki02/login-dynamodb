@@ -23,7 +23,7 @@ func NewSessionHandler(ss services.SessionService) *SessionHandler {
 	}
 }
 
-// Register es el handler para el registro de usuario, con o sin invitación.
+// Register es el handler para el registro de usuario.
 func (h *SessionHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var sessionReq request.RegisterUserRequest
 
@@ -32,7 +32,12 @@ func (h *SessionHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//TODO: llamar al service
+	// Pasar el contexto del request al service
+	err := h.sessionService.Register(r.Context(), sessionReq)
+	if err != nil {
+		response.ResponseError(w, err, http.StatusBadRequest)
+		return
+	}
 
 	response.ResponseSuccess(w, nil, http.StatusCreated)
 }
@@ -45,37 +50,33 @@ func (h *SessionHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	/*tokens, err := h.sessionService.Login(sessionReq.Email, sessionReq.Password)
+	// Llamar al service con contexto
+	tokens, err := h.sessionService.Login(r.Context(), sessionReq.Email, sessionReq.Password)
 	if err != nil {
 		response.ResponseError(w, err, http.StatusUnauthorized)
 		return
 	}
 
 	// Se envía el token JWT en la respuesta
-	response.ResponseSuccess(w, tokens, http.StatusOK)*/
-
-	//TODO: Llamar al service para login
-	response.ResponseSuccess(w, sessionReq, http.StatusOK) // Placeholder response
+	response.ResponseSuccess(w, tokens, http.StatusOK)
 }
 
 func (h *SessionHandler) RefreshTokenHandler(w http.ResponseWriter, r *http.Request) {
 	token, err := tokens.GetTokenInHeader(r)
-
 	if err != nil {
 		response.ResponseError(w, validations.ErrInvalidToken, http.StatusUnauthorized)
 		return
 	}
 
-	// tokens, err := h.sessionService.RefreshToken(ctx, token)
-	// if err != nil {
-	// 	response.ResponseError(w, err, http.StatusUnauthorized)
-	// 	return
-	// }
-	//TODO: Llamar al service para renovar tokens
+	// Llamar al service con contexto
+	newTokens, err := h.sessionService.RefreshToken(r.Context(), token)
+	if err != nil {
+		response.ResponseError(w, err, http.StatusUnauthorized)
+		return
+	}
 
 	// Se envía el token JWT en la respuesta
-	//response.ResponseSuccess(w, tokens, http.StatusOK)
-	response.ResponseSuccess(w, token, http.StatusOK) // Placeholder response
+	response.ResponseSuccess(w, newTokens, http.StatusOK)
 }
 
 /*
