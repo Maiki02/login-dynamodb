@@ -28,6 +28,12 @@ func main() {
 	db.ConnectDynamoDB()
 	defer db.DisconnectDynamoDB()
 
+	// Test real connection to DynamoDB
+	if err := db.TestDynamoDBConnection(); err != nil {
+		log.Printf("Warning: DynamoDB connection test failed: %v", err)
+		log.Println("The application will start but may fail on database operations")
+	}
+
 	router := routes.InitRoutes()
 
 	if _, ok := os.LookupEnv("LAMBDA_SERVER_PORT"); ok {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"myproject/internal/models"
 	"myproject/pkg/validations"
+	"os"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -11,7 +12,14 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
-const TABLE_USERS = "users"
+// getUsersTableName retorna el nombre de la tabla de usuarios desde variables de entorno
+func getUsersTableName() string {
+	tableName := os.Getenv("DYNAMODB_TABLE_USERS")
+	if tableName == "" {
+		return "users" // nombre por defecto
+	}
+	return tableName
+}
 
 // UserRepository define los métodos para interactuar con el almacenamiento de usuarios en DynamoDB.
 type UserRepository interface {
@@ -43,7 +51,7 @@ func (r *userRepository) CreateUser(ctx context.Context, user *models.User) erro
 
 	// Realizar la operación PutItem
 	_, err = r.dynamoClient.PutItem(ctx, &dynamodb.PutItemInput{
-		TableName: aws.String(TABLE_USERS),
+		TableName: aws.String(getUsersTableName()),
 		Item:      item,
 	})
 
@@ -53,7 +61,7 @@ func (r *userRepository) CreateUser(ctx context.Context, user *models.User) erro
 // GetUserByID obtiene un usuario por su ID
 func (r *userRepository) GetUserByID(ctx context.Context, id string) (*models.User, error) {
 	result, err := r.dynamoClient.GetItem(ctx, &dynamodb.GetItemInput{
-		TableName: aws.String(TABLE_USERS),
+		TableName: aws.String(getUsersTableName()),
 		Key: map[string]types.AttributeValue{
 			"id": &types.AttributeValueMemberS{Value: id},
 		},
@@ -80,7 +88,7 @@ func (r *userRepository) GetUserByID(ctx context.Context, id string) (*models.Us
 func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	// Usamos Query con GSI para buscar por email
 	result, err := r.dynamoClient.Query(ctx, &dynamodb.QueryInput{
-		TableName:              aws.String(TABLE_USERS),
+		TableName:              aws.String(getUsersTableName()),
 		IndexName:              aws.String("email-index"), // GSI para email
 		KeyConditionExpression: aws.String("contact_info.email.address = :email"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
@@ -115,7 +123,7 @@ func (r *userRepository) UpdateUser(ctx context.Context, id string, user *models
 
 	// Realizar la operación PutItem (actualización completa)
 	_, err = r.dynamoClient.PutItem(ctx, &dynamodb.PutItemInput{
-		TableName: aws.String(TABLE_USERS),
+		TableName: aws.String(getUsersTableName()),
 		Item:      item,
 	})
 
