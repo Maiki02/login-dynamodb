@@ -63,7 +63,7 @@ func (r *userRepository) GetUserByID(ctx context.Context, id string) (*models.Us
 	result, err := r.dynamoClient.GetItem(ctx, &dynamodb.GetItemInput{
 		TableName: aws.String(getUsersTableName()),
 		Key: map[string]types.AttributeValue{
-			"id": &types.AttributeValueMemberS{Value: id},
+			"user_id": &types.AttributeValueMemberS{Value: id},
 		},
 	})
 
@@ -84,13 +84,18 @@ func (r *userRepository) GetUserByID(ctx context.Context, id string) (*models.Us
 	return &user, nil
 }
 
-// GetUserByEmail obtiene un usuario por su email usando Global Secondary Index
+// GetUserByEmail obtiene un usuario por su email usando scan temporal
+// TODO: Implementar GSI para mejor performance en producción
 func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
-	// Usamos Query con GSI para buscar por email
-	result, err := r.dynamoClient.Query(ctx, &dynamodb.QueryInput{
-		TableName:              aws.String(getUsersTableName()),
-		IndexName:              aws.String("email-index"), // GSI para email
-		KeyConditionExpression: aws.String("contact_info.email.address = :email"),
+	// Por ahora usamos Scan ya que no tenemos GSI configurado
+	// En producción debería usarse un GSI para mejor performance
+	result, err := r.dynamoClient.Scan(ctx, &dynamodb.ScanInput{
+		TableName:        aws.String(getUsersTableName()),
+		FilterExpression: aws.String("contact_info.#email.#address = :email"),
+		ExpressionAttributeNames: map[string]string{
+			"#email":   "email",
+			"#address": "address",
+		},
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":email": &types.AttributeValueMemberS{Value: email},
 		},

@@ -29,9 +29,9 @@ type User struct {
 
 // PersonalInfo agrupa la información personal del usuario.
 type PersonalInfo struct {
-	Name      string    `json:"name" dynamodbav:"name"`
-	LastName  string    `json:"last_name" dynamodbav:"last_name"`
-	BirthDate time.Time `json:"birth_date,omitempty" dynamodbav:"birth_date,omitempty"`
+	Name      string     `json:"name" dynamodbav:"name"`
+	LastName  string     `json:"last_name" dynamodbav:"last_name"`
+	BirthDate *time.Time `json:"birth_date,omitempty" dynamodbav:"birth_date,omitempty"`
 }
 
 // ContactInfo agrupa la información de contacto del usuario.

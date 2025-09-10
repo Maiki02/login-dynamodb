@@ -19,16 +19,15 @@ type Tokens struct {
 
 func GenerateJWT(user *models.User, duration int) (string, error) {
 	return generateTokenByClaims(jwt.MapClaims{
-		"id":             user.ID,
-		"personal_info":  user.PersonalInfo,
-		"contact_info":   user.ContactInfo,
-		"companies_info": user.CompaniesInfo,
-		"created_at":     user.CreatedAt,
-		"updated_at":     user.UpdatedAt,
-		"deleted_at":     user.DeletedAt,
-		"last_session":   user.LastSession,
-		"iat":            time.Now().Unix(),
-		"exp":            time.Now().Add(time.Hour * time.Duration(duration)).Unix(),
+		"id":            user.ID,
+		"personal_info": user.PersonalInfo,
+		"contact_info":  user.ContactInfo,
+		"created_at":    user.CreatedAt,
+		"updated_at":    user.UpdatedAt,
+		"deleted_at":    user.DeletedAt,
+		"last_session":  user.LastSession,
+		"iat":           time.Now().Unix(),
+		"exp":           time.Now().Add(time.Hour * time.Duration(duration)).Unix(),
 	})
 }
 
