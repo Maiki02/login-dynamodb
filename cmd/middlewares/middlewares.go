@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	tokens "myproject/pkg/jwt"
-	"myproject/pkg/request"
 	"myproject/pkg/response"
 	"myproject/pkg/validations"
 	"net/http"
@@ -12,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/time/rate"
 )
 
@@ -70,23 +68,21 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		}
 
 		// 3. Extrae el ID del claim usando la clave del mapa y conviértelo a string.
-		idString, ok := (*claims)["id"].(string)
+		userID, ok := (*claims)["id"].(string)
 		if !ok {
 			// Este error ocurre si el claim "id" no existe o no es un string.
 			response.ResponseError(w, validations.ErrInvalidUserID, http.StatusUnauthorized)
 			return
 		}
 
-		// 4. Convierte el ID de string a ObjectID
-		userID, err := primitive.ObjectIDFromHex(idString)
-		if err != nil {
-			// Este error ocurre si el string no es un ObjectID válido.
+		// 4. Valida que el userID no esté vacío
+		if userID == "" {
 			response.ResponseError(w, validations.ErrInvalidUserID, http.StatusUnauthorized)
 			return
 		}
 
 		// 5. Crea un nuevo contexto con el ID del usuario
-		ctx := context.WithValue(r.Context(), request.UserContextKey, userID)
+		ctx := context.WithValue(r.Context(), "user_id", userID)
 
 		// 6. Llama al siguiente handler con la petición que incluye el nuevo contexto
 		next.ServeHTTP(w, r.WithContext(ctx))

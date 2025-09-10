@@ -25,8 +25,8 @@ func init() {
 // NO es necesaria la variable global 'httpAdapter'
 
 func main() {
-	db.ConnectMongoDB()
-	defer db.DisconnectMongoDB()
+	db.ConnectDynamoDB()
+	defer db.DisconnectDynamoDB()
 
 	router := routes.InitRoutes()
 

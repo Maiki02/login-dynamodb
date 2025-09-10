@@ -2,65 +2,122 @@ package repositories
 
 import (
 	"context"
-	"myproject/internal/db"
 	"myproject/internal/models"
 	"myproject/pkg/validations"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
-const DB_USER_NAME = "Users_DB"
-const COLLECTION_USER = "users"
+const TABLE_USERS = "users"
 
-// UserRepository define los métodos para interactuar con el almacenamiento de usuarios.
+// UserRepository define los métodos para interactuar con el almacenamiento de usuarios en DynamoDB.
 type UserRepository interface {
-	CreateUser(user *models.User) error
-	GetUserByFilter(filter map[string]interface{}) (*models.User, error)
-	UpdateUser(id string, updates map[string]interface{}) error
+	CreateUser(ctx context.Context, user *models.User) error
+	GetUserByID(ctx context.Context, id string) (*models.User, error)
+	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
+	UpdateUser(ctx context.Context, id string, user *models.User) error
 }
 
-// userRepository implementa la interfaz UserRepository.
-type userRepository struct{}
+// userRepository implementa la interfaz UserRepository usando DynamoDB.
+type userRepository struct {
+	dynamoClient *dynamodb.Client
+}
 
 // NewUserRepository crea una nueva instancia de userRepository.
-func NewUserRepository() UserRepository {
-	return &userRepository{}
+func NewUserRepository(client *dynamodb.Client) UserRepository {
+	return &userRepository{
+		dynamoClient: client,
+	}
 }
 
-func (r *userRepository) CreateUser(user *models.User) error {
-	_, err := db.InsertDocument(DB_USER_NAME, COLLECTION_USER, user)
+// CreateUser crea un nuevo usuario en DynamoDB
+func (r *userRepository) CreateUser(ctx context.Context, user *models.User) error {
+	// Convertir el modelo a atributos de DynamoDB
+	item, err := attributevalue.MarshalMap(user)
+	if err != nil {
+		return err
+	}
+
+	// Realizar la operación PutItem
+	_, err = r.dynamoClient.PutItem(ctx, &dynamodb.PutItemInput{
+		TableName: aws.String(TABLE_USERS),
+		Item:      item,
+	})
+
 	return err
 }
 
-func (r *userRepository) UpdateUser(id string, updates map[string]interface{}) error {
-	return db.UpdateDocumentByID(DB_USER_NAME, COLLECTION_USER, id, updates)
-}
+// GetUserByID obtiene un usuario por su ID
+func (r *userRepository) GetUserByID(ctx context.Context, id string) (*models.User, error) {
+	result, err := r.dynamoClient.GetItem(ctx, &dynamodb.GetItemInput{
+		TableName: aws.String(TABLE_USERS),
+		Key: map[string]types.AttributeValue{
+			"id": &types.AttributeValueMemberS{Value: id},
+		},
+	})
 
-/*
-func (r *userRepository) GetClientsByFilter(filter map[string]interface{}) (*[]models.Client, error) {
-	cursor, err := db.FindDocuments(COLLECTION_CLIENT, filter)
 	if err != nil {
 		return nil, err
 	}
-	var clients []models.Client
-	if err = cursor.All(context.Background(), &clients); err != nil {
-		return nil, err
-	}
 
-	return &clients, nil
-}*/
-
-func (r *userRepository) GetUserByFilter(filter map[string]interface{}) (*models.User, error) {
-	cursor, err := db.FindDocuments(DB_USER_NAME, COLLECTION_USER, filter)
-	if err != nil {
-		return nil, err
+	if result.Item == nil {
+		return nil, validations.ErrDocumentNotFound
 	}
-	defer cursor.Close(context.Background())
 
 	var user models.User
-	if cursor.Next(context.Background()) {
-		if err = cursor.Decode(&user); err != nil {
-			return nil, err
-		}
-		return &user, nil
+	err = attributevalue.UnmarshalMap(result.Item, &user)
+	if err != nil {
+		return nil, err
 	}
-	return nil, validations.ErrDocumentNotFound
+
+	return &user, nil
+}
+
+// GetUserByEmail obtiene un usuario por su email usando Global Secondary Index
+func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
+	// Usamos Query con GSI para buscar por email
+	result, err := r.dynamoClient.Query(ctx, &dynamodb.QueryInput{
+		TableName:              aws.String(TABLE_USERS),
+		IndexName:              aws.String("email-index"), // GSI para email
+		KeyConditionExpression: aws.String("contact_info.email.address = :email"),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":email": &types.AttributeValueMemberS{Value: email},
+		},
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(result.Items) == 0 {
+		return nil, validations.ErrDocumentNotFound
+	}
+
+	var user models.User
+	err = attributevalue.UnmarshalMap(result.Items[0], &user)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+// UpdateUser actualiza un usuario existente
+func (r *userRepository) UpdateUser(ctx context.Context, id string, user *models.User) error {
+	// Convertir el modelo a atributos de DynamoDB
+	item, err := attributevalue.MarshalMap(user)
+	if err != nil {
+		return err
+	}
+
+	// Realizar la operación PutItem (actualización completa)
+	_, err = r.dynamoClient.PutItem(ctx, &dynamodb.PutItemInput{
+		TableName: aws.String(TABLE_USERS),
+		Item:      item,
+	})
+
+	return err
 }
