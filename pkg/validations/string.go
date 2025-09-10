@@ -2,7 +2,6 @@ package validations
 
 import (
 	"fmt"
-	"myproject/pkg/structures"
 	"regexp"
 	"strings"
 )
@@ -67,39 +66,3 @@ func IsValidEmail(email string) bool {
 }
 
 var digitsRegex = regexp.MustCompile(`^[0-9]+$`)
-
-// IsValidIdentification valida la estructura de identificación completa.
-func IsValidIdentification(ident *structures.Identification) bool {
-	if ident == nil || ident.Number == "" || ident.Type == "" {
-		return false
-	}
-
-	// Aquí puedes agregar validaciones específicas por tipo de documento.
-	switch ident.Type {
-	case structures.DNI:
-		// Por ejemplo, para DNI solo permitimos números y un largo específico.
-		return digitsRegex.MatchString(ident.Number) && len(ident.Number) >= 7 && len(ident.Number) <= 8
-	case structures.CUIL:
-		// El CUIL tiene un formato específico (ej: 11 dígitos).
-		return digitsRegex.MatchString(ident.Number) && len(ident.Number) == 11
-	case structures.Passport:
-		// El pasaporte puede ser alfanumérico.
-		return len(ident.Number) > 0
-	default:
-		// Si el tipo no es conocido, lo consideramos inválido.
-		return false
-	}
-}
-
-func IsValidPhone(p structures.Phone) bool {
-	if !digitsRegex.MatchString(p.CountryCode) || len(p.CountryCode) < 1 || len(p.CountryCode) > 4 {
-		return false
-	}
-	if !digitsRegex.MatchString(p.AreaCode) || len(p.AreaCode) < 1 || len(p.AreaCode) > 5 {
-		return false
-	}
-	if !digitsRegex.MatchString(p.Number) || len(p.Number) < 4 || len(p.Number) > 15 {
-		return false
-	}
-	return true
-}
