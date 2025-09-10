@@ -32,22 +32,7 @@ func (h *SessionHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if sessionReq.InvitationToken != "" {
-		// Registro a través de una invitación
-		user, err := h.sessionService.RegisterWithInvitation(r.Context(), sessionReq)
-		if err != nil {
-			response.ResponseError(w, err, http.StatusBadRequest)
-			return
-		}
-		response.ResponseSuccess(w, user, http.StatusCreated)
-		return
-	}
-
-	// Registro normal (sin invitación)
-	if err := h.sessionService.Register(sessionReq); err != nil {
-		response.ResponseError(w, err, http.StatusInternalServerError)
-		return
-	}
+	//TODO: llamar al service
 
 	response.ResponseSuccess(w, nil, http.StatusCreated)
 }
@@ -60,14 +45,17 @@ func (h *SessionHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokens, err := h.sessionService.Login(sessionReq.Email, sessionReq.Password)
+	/*tokens, err := h.sessionService.Login(sessionReq.Email, sessionReq.Password)
 	if err != nil {
 		response.ResponseError(w, err, http.StatusUnauthorized)
 		return
 	}
 
 	// Se envía el token JWT en la respuesta
-	response.ResponseSuccess(w, tokens, http.StatusOK)
+	response.ResponseSuccess(w, tokens, http.StatusOK)*/
+
+	//TODO: Llamar al service para login
+	response.ResponseSuccess(w, sessionReq, http.StatusOK) // Placeholder response
 }
 
 func (h *SessionHandler) RefreshTokenHandler(w http.ResponseWriter, r *http.Request) {
@@ -78,14 +66,16 @@ func (h *SessionHandler) RefreshTokenHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	tokens, err := h.sessionService.RefreshToken(token)
-	if err != nil {
-		response.ResponseError(w, err, http.StatusUnauthorized)
-		return
-	}
+	// tokens, err := h.sessionService.RefreshToken(ctx, token)
+	// if err != nil {
+	// 	response.ResponseError(w, err, http.StatusUnauthorized)
+	// 	return
+	// }
+	//TODO: Llamar al service para renovar tokens
 
 	// Se envía el token JWT en la respuesta
-	response.ResponseSuccess(w, tokens, http.StatusOK)
+	//response.ResponseSuccess(w, tokens, http.StatusOK)
+	response.ResponseSuccess(w, token, http.StatusOK) // Placeholder response
 }
 
 /*

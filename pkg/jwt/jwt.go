@@ -19,7 +19,7 @@ type Tokens struct {
 
 func GenerateJWT(user *models.User, duration int) (string, error) {
 	return generateTokenByClaims(jwt.MapClaims{
-		"id":             user.ID.Hex(),
+		"id":             user.ID,
 		"personal_info":  user.PersonalInfo,
 		"contact_info":   user.ContactInfo,
 		"companies_info": user.CompaniesInfo,
