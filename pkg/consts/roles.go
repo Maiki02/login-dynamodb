@@ -1,0 +1,8 @@
+package consts
+
+const (
+	ROLE_OWNER          = "OWNER"
+	ROLE_ADMINISTRATIVE = "ADMINISTRATIVE"
+	ROLE_EMPLOYEE       = "EMPLOYEE"
+	ROLE_CLIENT         = "CLIENT"
+)
